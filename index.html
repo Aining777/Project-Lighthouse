@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目交付仪表盘</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>项目交付仪表盘</h1>
+            <p>高效追踪项目交付、合规与安全状态</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card" id="card-total" data-filter="total">
+                <div class="stat-icon total"></div>
+                <div class="stat-info">
+                    <div class="stat-number" id="totalProjects">0</div>
+                    <div class="stat-label">总项目数</div>
+                </div>
+            </div>
+            <div class="stat-card" id="card-re-test" data-filter="re-test">
+                <div class="stat-icon completed"></div>
+                <div class="stat-info">
+                    <div class="stat-number" id="reTestProjects">0</div>
+                    <div class="stat-label">复测项目</div>
+                </div>
+            </div>
+            <div class="stat-card" id="card-privacy" data-filter="privacy">
+                <div class="stat-icon privacy"></div>
+                <div class="stat-info">
+                    <div class="stat-number" id="totalPrivacyIssues">0</div>
+                    <div class="stat-label">隐私合规问题</div>
+                </div>
+            </div>
+            <div class="stat-card" id="card-security" data-filter="security">
+                <div class="stat-icon security"></div>
+                <div class="stat-info">
+                    <div class="stat-number" id="totalSecurityIssues">0</div>
+                    <div class="stat-label">安全漏洞问题</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    <i data-feather="plus"></i> 添加项目
+                </button>
+                <div class="controls-divider"></div>
+                <button class="btn" onclick="exportToExcel()">
+                    <i data-feather="download"></i> 导出Excel
+                </button>
+                <button class="btn" onclick="importData()">
+                    <i data-feather="upload"></i> 导入JSON
+                </button>
+                <button class="btn" onclick="importExcel()">
+                    <i data-feather="upload-cloud"></i> 导入Excel
+                </button>
+                <button class="btn btn-danger" onclick="clearAllData()">
+                    <i data-feather="trash-2"></i> 清空数据
+                </button>
+                
+                <div class="search-controls">
+                    <div id="filter-status" class="filter-status-display" style="display: none;">
+                        <span id="filter-text"></span>
+                        <button id="clear-card-filter" class="btn-icon"><i data-feather="x"></i></button>
+                    </div>
+                    <input type="month" id="monthFilter" class="search-input" onchange="filterByMonth()">
+                    <button class="clear-filter-btn" onclick="clearFilter()">清除筛选</button>
+                </div>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>项目名称</th>
+                        <th>资产类型</th>
+                        <th>交付状态</th>
+                        <th>交付时间</th>
+                        <th>隐私合规问题</th>
+                        <th>安全漏洞问题</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <!-- 数据将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>问题类型分布</h3>
+                <canvas id="issueTypeChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>月度交付业务量详情</h3>
+                <div id="monthlyDeliveryReport" class="monthly-delivery-report"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑项目模态框 -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">添加新项目</h3>
+            <div class="form-group">
+                <label>项目名称</label>
+                <input type="text" id="projectName" placeholder="请输入项目名称">
+            </div>
+            <div class="form-group">
+                <label>资产类型</label>
+                <select id="assetType">
+                    <option value="app">APP</option>
+                    <option value="miniprogram">小程序</option>
+                    <option value="wechat">公众号</option>
+                    <option value="h5">H5</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>交付状态</label>
+                <select id="deliveryStatus">
+                    <option value="initial-test">初测</option>
+                    <option value="re-test">复测</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>交付时间</label>
+                <input type="date" id="deliveryDate">
+            </div>
+            <div class="form-group">
+                <label>隐私合规问题数量</label>
+                <input type="number" id="formPrivacyIssues" min="0" value="0" step="1">
+            </div>
+            <div class="form-group">
+                <label>安全漏洞问题数量</label>
+                <input type="number" id="formSecurityIssues" min="0" value="0" step="1">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <textarea id="remarks" rows="3" placeholder="请输入备注信息"></textarea>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveProject()">保存</button>
+                <button class="btn" onclick="closeModal()" style="margin-left: 10px; background: #6c757d; color: white;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入框 -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+    <script src="js/script.js"></script>
+
+
+    </body>
+</html>
