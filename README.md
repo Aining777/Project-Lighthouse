@@ -30,7 +30,7 @@
 本项目无需复杂的环境配置或编译过程。
 
 1.  下载本项目所有文件。
-2.  直接用现代浏览器 (如 Google Chrome, Microsoft Edge, Firefox) 打开 `jiaofu.html` 文件即可开始使用。
+2.  直接用现代浏览器 (如 Google Chrome, Microsoft Edge, Firefox) 打开 `index.html` 文件即可开始使用。
 
 ## 🛠️ 技术栈
 
