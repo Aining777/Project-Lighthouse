@@ -23,6 +23,7 @@
 - **现代化用户界面**:
     - 采用简洁、响应式的设计，在不同屏幕尺寸下均有良好体验。
     - 使用 Feather Icons 提供清晰、统一的图标。
+<img width="1912" height="924" alt="e54ff8d36f841f0ccc3727c7f817c0b6" src="https://github.com/user-attachments/assets/b10f0425-cebc-4b1a-9282-2d1a718ebc7f" />
 
 ## 🚀 如何使用
 
