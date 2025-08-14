@@ -8,7 +8,7 @@ const STORAGE_KEY = 'projectDeliveryData';
 
 let issueTypeChart = null;
 
-const ASSET_TYPE_MAP = { 'app': 'APP', 'miniprogram': '小程序', 'wechat': '公众号', 'h5': 'H5' };
+const ASSET_TYPE_MAP = { 'app': 'APP', 'miniprogram': '小程序', 'wechat': '公众号', 'h5': 'H5', 'sdk': 'SDK' };
 const STATUS_MAP = { 'initial-test': '初测', 're-test': '复测' };
 
 // --- 初始化 ---
