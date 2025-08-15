@@ -16,10 +16,10 @@ function initApp() {
     if (!loadFromLocalStorage() || projects.length === 0) {
         // 如果没有本地数据，使用示例数据
         projects = [
-            { name: "电商移动端APP", assetType: "app", status: "re-test", deliveryDate: "2024-03-10", privacyIssues: 2, securityIssues: 1, remarks: "已完成一轮复测" },
-            { name: "客服小程序", assetType: "miniprogram", status: "initial-test", deliveryDate: "2024-04-15", privacyIssues: 0, securityIssues: 3, remarks: "安全问题待修复" },
-            { name: "营销H5", assetType: "h5", status: "re-test", deliveryDate: "2024-02-25", privacyIssues: 1, securityIssues: 0, remarks: "" },
-            { name: "企业公众号", assetType: "wechat", status: "initial-test", deliveryDate: "2024-05-20", privacyIssues: 0, securityIssues: 0, remarks: "待开始初测" }
+            { name: "电商移动端APP", assetType: "app", status: "re-test", deliveryDate: "2024-03-10", privacyIssues: 2, securityIssues: 1, remarks: "已完成一轮复测", passStatus: "passed" },
+            { name: "客服小程序", assetType: "miniprogram", status: "initial-test", deliveryDate: "2024-04-15", privacyIssues: 0, securityIssues: 3, remarks: "安全问题待修复", passStatus: "pending" },
+            { name: "营销H5", assetType: "h5", status: "re-test", deliveryDate: "2024-02-25", privacyIssues: 1, securityIssues: 0, remarks: "", passStatus: "passed" },
+            { name: "企业公众号", assetType: "wechat", status: "initial-test", deliveryDate: "2024-05-20", privacyIssues: 0, securityIssues: 0, remarks: "待开始初测", passStatus: "failed" }
         ];
         saveToLocalStorage();
     }
@@ -41,7 +41,7 @@ function loadFromLocalStorage() {
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-            projects = JSON.parse(saved).map(p => ({ ...p, privacyIssues: p.privacyIssues || 0, securityIssues: p.securityIssues || 0 }));
+            projects = JSON.parse(saved).map(p => ({ ...p, privacyIssues: p.privacyIssues || 0, securityIssues: p.securityIssues || 0, passStatus: p.passStatus || 'pending' }));
             sortProjects(); // Sort after loading
             return true;
         }
@@ -124,6 +124,7 @@ function renderTable() {
         const isHighlighted = (activeCardFilter === 'privacy' && project.privacyIssues > 0) || (activeCardFilter === 'security' && project.securityIssues > 0);
         row.className = isHighlighted ? 'highlight' : '';
         row.innerHTML = `
+            <td>${index + 1}</td>
             <td class="project-name">${project.name}</td>
             <td><span class="asset-type asset-${project.assetType}">${ASSET_TYPE_MAP[project.assetType]}</span></td>
             <td><span class="status status-${project.status}">${STATUS_MAP[project.status]}</span></td>
@@ -131,6 +132,13 @@ function renderTable() {
             <td><span class="issue-count issue-privacy">${project.privacyIssues}</span></td>
             <td><span class="issue-count issue-security">${project.securityIssues}</span></td>
             <td class="remarks" title="${project.remarks}">${project.remarks || '-'}</td>
+            <td>
+                <select class="pass-status-select pass-status-${project.passStatus}" onchange="handlePassStatusChange(this, ${index})">
+                    <option value="pending" ${project.passStatus === 'pending' ? 'selected' : ''}>未评审</option>
+                    <option value="passed" ${project.passStatus === 'passed' ? 'selected' : ''}>通过</option>
+                    <option value="failed" ${project.passStatus === 'failed' ? 'selected' : ''}>不通过</option>
+                </select>
+            </td>
             <td class="actions">
                 <button class="btn-icon" onclick="showEditModal(${index})" title="编辑"><i data-feather="edit"></i></button>
                 <button class="btn-icon" onclick="deleteProject(${index})" title="删除"><i data-feather="trash-2"></i></button>
@@ -138,6 +146,16 @@ function renderTable() {
         `;
         tbody.appendChild(row);
     });
+}
+
+function handlePassStatusChange(selectElement, index) {
+    const newStatus = selectElement.value;
+    const projectIndex = projects.findIndex(p => p === filteredProjects[index]);
+    if (projectIndex !== -1) {
+        projects[projectIndex].passStatus = newStatus;
+        saveToLocalStorage();
+    }
+    selectElement.className = `pass-status-select pass-status-${newStatus}`;
 }
 
 function updateStats() {
@@ -228,8 +246,11 @@ function saveProject() {
     };
     if (!project.name) { alert('请输入项目名称'); return; }
     if (editingIndex >= 0) {
+        // Preserve passStatus when editing
+        project.passStatus = projects[editingIndex].passStatus;
         projects[editingIndex] = project;
     } else {
+        project.passStatus = 'pending'; // Default for new projects
         projects.push(project);
     }
     sortProjects(); // Sort after modification
@@ -269,15 +290,19 @@ function exportToExcel() {
         alert('没有数据可以导出。');
         return;
     }
+    
+    const passStatusMap = { pending: '未评审', passed: '通过', failed: '不通过' };
 
-    const mappedData = dataToExport.map(p => ({
+    const mappedData = dataToExport.map((p, index) => ({
+        '编号': index + 1,
         '项目名称': p.name,
         '资产类型': ASSET_TYPE_MAP[p.assetType] || p.assetType,
         '交付状态': STATUS_MAP[p.status] || p.status,
         '交付时间': p.deliveryDate,
         '隐私合规问题': p.privacyIssues,
         '安全漏洞问题': p.securityIssues,
-        '备注': p.remarks
+        '备注': p.remarks,
+        '是否通过': passStatusMap[p.passStatus] || '未评审'
     }));
 
     const ws = XLSX.utils.json_to_sheet(mappedData);
@@ -286,8 +311,8 @@ function exportToExcel() {
 
     // 设置列宽
     ws['!cols'] = [
-        { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, 
-        { wch: 18 }, { wch: 18 }, { wch: 30 }
+        { wch: 8 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, 
+        { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 12 }
     ];
 
     const filename = `项目交付记录_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -348,6 +373,7 @@ function importExcel() {
                 if (confirm(`确定要导入 ${jsonData.length} 条Excel记录吗？这将替换当前所有数据。`)) {
                     const reverseAssetMap = Object.fromEntries(Object.entries(ASSET_TYPE_MAP).map(([k, v]) => [v, k]));
                     const reverseStatusMap = Object.fromEntries(Object.entries(STATUS_MAP).map(([k, v]) => [v, k]));
+                    const reversePassStatusMap = { '未评审': 'pending', '通过': 'passed', '不通过': 'failed' };
 
                     projects = jsonData.map(row => ({
                         name: row['项目名称'] || '',
@@ -356,7 +382,8 @@ function importExcel() {
                         deliveryDate: formatExcelDate(row['交付时间']),
                         privacyIssues: parseInt(row['隐私合规问题'], 10) || 0,
                         securityIssues: parseInt(row['安全漏洞问题'], 10) || 0,
-                        remarks: row['备注'] || ''
+                        remarks: row['备注'] || '',
+                        passStatus: reversePassStatusMap[row['是否通过']] || 'pending'
                     }));
                     sortProjects(); // Sort after import
                     saveToLocalStorage();
