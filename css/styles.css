@@ -523,3 +523,39 @@ body {
     width: 24px;
     height: 24px;
 }
+
+/* Styles for pass status dropdown */
+.pass-status-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.pass-status-select:focus {
+    box-shadow: 0 0 0 2px var(--component-background), 0 0 0 4px var(--primary-color);
+}
+
+.pass-status-pending {
+    background-color: #FEF3C7; /* yellow */
+    color: #D97706;
+}
+
+.pass-status-passed {
+    background-color: #D1FAE5; /* green */
+    color: #059669;
+}
+
+.pass-status-failed {
+    background-color: #FEE2E2; /* red */
+    color: #DC2626;
+}
